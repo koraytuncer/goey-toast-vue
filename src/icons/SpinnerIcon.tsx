@@ -17,7 +17,6 @@ export const SpinnerIcon: FC<SpinnerIconProps> = ({ size = 20, className }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     className={className}
-    style={{ animation: 'goey-spin 1s linear infinite' }}
   >
     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
   </svg>

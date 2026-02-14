@@ -75,7 +75,8 @@ function PromiseToastWrapper<T>({
   useEffect(() => {
     const resetDuration = (hasExpandedContent: boolean) => {
       const baseDuration = data.timing?.displayDuration ?? (hasExpandedContent ? DEFAULT_EXPANDED_DURATION : undefined)
-      const duration = baseDuration != null && hasExpandedContent ? baseDuration + 100 : baseDuration
+      const collapseDurMs = (data.timing?.collapseDuration ?? 0.9) * 1000
+      const duration = baseDuration != null && hasExpandedContent ? baseDuration + collapseDurMs : baseDuration
       if (duration != null) {
         toast.custom(() => (
           <PromiseToastWrapper promise={promise} data={data} toastId={toastId} />
@@ -137,9 +138,10 @@ function createGoeyToast(
 ) {
   const baseDuration = options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined)
   const hasExpandedContent = Boolean(options?.description || options?.action)
-  // Small buffer so pill is briefly visible after pre-dismiss collapse
+  const collapseDurMs = (options?.timing?.collapseDuration ?? 0.9) * 1000
+  // Buffer after collapse so the pill squish animation has time to play
   const duration = baseDuration != null && hasExpandedContent
-    ? baseDuration + 100
+    ? baseDuration + collapseDurMs
     : baseDuration
 
   return toast.custom(

@@ -1,9 +1,11 @@
-/* Global spinner keyframe — avoids inline <style> tags and CSP issues */
-:global {
-  @keyframes goey-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
+/* Spinner animation — scoped to module, no global keyframe needed */
+.spinnerSpin {
+  animation: goey-spin 1s linear infinite;
+}
+
+@keyframes goey-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Style detection marker — used by GoeyToaster to verify CSS is loaded */
