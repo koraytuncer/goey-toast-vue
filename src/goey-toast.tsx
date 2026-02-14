@@ -11,7 +11,7 @@ import type {
   GoeyToastTimings,
 } from './types'
 
-const DEFAULT_EXPANDED_DURATION = 6000
+const DEFAULT_EXPANDED_DURATION = 4000
 
 function GoeyToastWrapper({
   initialPhase,
@@ -22,6 +22,8 @@ function GoeyToastWrapper({
   icon,
   classNames,
   fillColor,
+  borderColor,
+  borderWidth,
   timing,
 }: {
   initialPhase: GoeyToastPhase
@@ -32,6 +34,8 @@ function GoeyToastWrapper({
   icon?: ReactNode
   classNames?: GoeyToastClassNames
   fillColor?: string
+  borderColor?: string
+  borderWidth?: number
   timing?: GoeyToastTimings
 }) {
   return (
@@ -44,6 +48,8 @@ function GoeyToastWrapper({
       phase={initialPhase}
       classNames={classNames}
       fillColor={fillColor}
+      borderColor={borderColor}
+      borderWidth={borderWidth}
       timing={timing}
     />
   )
@@ -64,8 +70,9 @@ function PromiseToastWrapper<T>({
   const [action, setAction] = useState<GoeyToastAction | undefined>(undefined)
 
   useEffect(() => {
-    const resetDuration = (hasDescription: boolean) => {
-      const duration = data.timing?.displayDuration ?? (hasDescription ? DEFAULT_EXPANDED_DURATION : undefined)
+    const resetDuration = (hasExpandedContent: boolean) => {
+      const baseDuration = data.timing?.displayDuration ?? (hasExpandedContent ? DEFAULT_EXPANDED_DURATION : undefined)
+      const duration = baseDuration != null && hasExpandedContent ? baseDuration + 100 : baseDuration
       if (duration != null) {
         toast.custom(() => (
           <PromiseToastWrapper promise={promise} data={data} toastId={toastId} />
@@ -111,6 +118,8 @@ function PromiseToastWrapper<T>({
       phase={phase}
       classNames={data.classNames}
       fillColor={data.fillColor}
+      borderColor={data.borderColor}
+      borderWidth={data.borderWidth}
       timing={data.timing}
     />
   )
@@ -121,6 +130,13 @@ function createGoeyToast(
   type: GoeyToastType,
   options?: GoeyToastOptions
 ) {
+  const baseDuration = options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined)
+  const hasExpandedContent = Boolean(options?.description || options?.action)
+  // Small buffer so pill is briefly visible after pre-dismiss collapse
+  const duration = baseDuration != null && hasExpandedContent
+    ? baseDuration + 100
+    : baseDuration
+
   return toast.custom(
     () => (
       <GoeyToastWrapper
@@ -132,11 +148,13 @@ function createGoeyToast(
         icon={options?.icon}
         classNames={options?.classNames}
         fillColor={options?.fillColor}
+        borderColor={options?.borderColor}
+        borderWidth={options?.borderWidth}
         timing={options?.timing}
       />
     ),
     {
-      duration: options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined),
+      duration,
       id: options?.id,
     }
   )

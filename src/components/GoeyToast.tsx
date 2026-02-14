@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, type FC, type ReactNode } from 'react'
 import { motion, AnimatePresence, animate } from 'framer-motion'
 import type { GoeyToastAction, GoeyToastClassNames, GoeyToastPhase, GoeyToastTimings, GoeyToastType } from '../types'
+import { getGoeyPosition } from '../context'
 import { DefaultIcon, SuccessIcon, ErrorIcon, WarningIcon, InfoIcon, SpinnerIcon } from '../icons'
+import { usePrefersReducedMotion } from '../usePrefersReducedMotion'
 import styles from './GoeyToast.module.css'
 
 export interface GoeyToastProps {
@@ -13,6 +15,8 @@ export interface GoeyToastProps {
   phase: GoeyToastPhase
   classNames?: GoeyToastClassNames
   fillColor?: string
+  borderColor?: string
+  borderWidth?: number
   timing?: GoeyToastTimings
 }
 
@@ -43,6 +47,7 @@ const actionColorMap: Record<GoeyToastPhase, string> = {
 }
 
 const PH = 34 // pill height constant
+const DEFAULT_DISPLAY_DURATION = 4000
 
 /**
  * Recalculates Sonner's --initial-height and --offset CSS variables on all
@@ -56,23 +61,18 @@ function syncSonnerHeights(wrapperEl: HTMLElement | null) {
   if (!li?.parentElement) return
 
   const ol = li.parentElement
-  const toaster = ol.closest('[data-sonner-toaster]') as HTMLElement | null
-  const gap = toaster
-    ? parseInt(getComputedStyle(toaster).getPropertyValue('--gap') || '14', 10)
-    : 14
-
   const toasts = Array.from(
     ol.querySelectorAll(':scope > [data-sonner-toast]')
   ) as HTMLElement[]
 
-  let offset = 0
+  // Only update --initial-height so Sonner knows each toast's actual size.
+  // Do NOT overwrite --offset — Sonner handles stacking direction (up for
+  // bottom positions, down for top) and collapsed peek offsets internally.
   for (const t of toasts) {
     const content = t.firstElementChild as HTMLElement | null
     const height = content ? content.getBoundingClientRect().height : 0
     if (height > 0) {
       t.style.setProperty('--initial-height', `${height}px`)
-      t.style.setProperty('--offset', `${offset}px`)
-      offset += height + gap
     }
   }
 }
@@ -131,12 +131,20 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   icon,
   phase,
   classNames,
-  fillColor = '#F2F1EC',
+  fillColor = '#ffffff',
+  borderColor,
+  borderWidth,
   timing,
 }) => {
+  const position = getGoeyPosition()
+  const isRight = position?.includes('right') ?? false
+  const prefersReducedMotion = usePrefersReducedMotion()
+
   // Action success override state
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
+  const [dismissing, setDismissing] = useState(false)
   const collapsingRef = useRef(false)
+  const preDismissRef = useRef(false)
   const expandedDimsRef = useRef({ pw: 0, bw: 0, th: 0 })
 
   // Effective values (overridden when action success is active)
@@ -148,7 +156,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   const isLoading = effectivePhase === 'loading'
   const hasDescription = Boolean(effectiveDescription)
   const hasAction = Boolean(effectiveAction)
-  const isExpanded = hasDescription || hasAction
+  const isExpanded = (hasDescription || hasAction) && !dismissing
 
   const [showBody, setShowBody] = useState(false)
 
@@ -180,6 +188,9 @@ export const GoeyToast: FC<GoeyToastProps> = ({
     const { pw: p, bw: b, th: h } = aDims.current
     if (p <= 0 || b <= 0 || h <= 0) return
     const t = morphTRef.current
+    // Read position fresh each call so flush never uses a stale value
+    const pos = getGoeyPosition()
+    const rightSide = pos?.includes('right') ?? false
     pathRef.current?.setAttribute('d', morphPath(p, b, h, t))
 
     if (t >= 1) {
@@ -207,7 +218,10 @@ export const GoeyToast: FC<GoeyToastProps> = ({
         contentRef.current.style.width = targetBw + 'px'
         contentRef.current.style.overflow = 'hidden'
         contentRef.current.style.maxHeight = currentH + 'px'
-        contentRef.current.style.clipPath = `inset(0 ${targetBw - currentW}px 0 0)`
+        const clip = targetBw - currentW
+        contentRef.current.style.clipPath = rightSide
+          ? `inset(0 0 0 ${clip}px)`
+          : `inset(0 ${clip}px 0 0)`
       }
     } else {
       // Compact: constrain to pill dimensions
@@ -299,6 +313,12 @@ export const GoeyToast: FC<GoeyToastProps> = ({
     // Compact mode: animate pill resize smoothly
     if (prev.bw === target.bw && prev.pw === target.pw && prev.th === target.th) return
 
+    if (prefersReducedMotion) {
+      aDims.current = target
+      flush()
+      return
+    }
+
     pillResizeCtrl.current?.stop()
     pillResizeCtrl.current = animate(0, 1, {
       type: 'spring',
@@ -313,12 +333,13 @@ export const GoeyToast: FC<GoeyToastProps> = ({
         flush()
       },
     })
-  }, [pw, bw, th, hasDims, showBody, flush])
+  }, [pw, bw, th, hasDims, showBody, flush, prefersReducedMotion])
 
   // Phase 1: expand (delay showBody) or collapse (reverse morph)
   useEffect(() => {
     if (isExpanded) {
-      const t1 = setTimeout(() => setShowBody(true), timing?.expandDelay ?? 20)
+      const delay = prefersReducedMotion ? 0 : (timing?.expandDelay ?? 330)
+      const t1 = setTimeout(() => setShowBody(true), delay)
       return () => clearTimeout(t1)
     }
 
@@ -327,20 +348,34 @@ export const GoeyToast: FC<GoeyToastProps> = ({
 
     // Reverse morph if currently expanded
     if (morphTRef.current > 0) {
+      // Compute target compact pill dims from current header content
+      const csPad = contentRef.current ? getComputedStyle(contentRef.current) : null
+      const padX = csPad ? parseFloat(csPad.paddingLeft) + parseFloat(csPad.paddingRight) : 20
+      const targetPw = headerRef.current ? headerRef.current.offsetWidth + padX : aDims.current.pw
+      const targetDims = { pw: targetPw, bw: targetPw, th: PH }
+
+      if (prefersReducedMotion) {
+        morphTRef.current = 0
+        collapsingRef.current = false
+        preDismissRef.current = false
+        setShowBody(false)
+        aDims.current = { ...targetDims }
+        flush()
+        return
+      }
+
       const savedDims = expandedDimsRef.current.bw > 0
         ? { ...expandedDimsRef.current }
         : { ...aDims.current }
 
-      // Compute target compact pill dims from current header content
-      const csPad = contentRef.current ? getComputedStyle(contentRef.current) : null
-      const padX = csPad ? parseFloat(csPad.paddingLeft) + parseFloat(csPad.paddingRight) : 20
-      const targetPw = headerRef.current ? headerRef.current.offsetWidth + padX : savedDims.pw
-      const targetDims = { pw: targetPw, bw: targetPw, th: PH }
+      const isPreDismiss = preDismissRef.current
+      const collapseDur = timing?.collapseDuration ?? 0.9
+      const collapseTransition = isPreDismiss
+        ? { duration: collapseDur, ease: [0.4, 0, 0.2, 1] as const }
+        : { type: 'spring' as const, duration: collapseDur, bounce: 0.2 }
 
       morphCtrl.current = animate(morphTRef.current, 0, {
-        type: 'spring',
-        duration: timing?.collapseDuration ?? 0.4,
-        bounce: 0.2,
+        ...collapseTransition,
         onUpdate: (t) => {
           morphTRef.current = t
           // Interpolate dims from expanded toward compact target
@@ -354,6 +389,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
         onComplete: () => {
           morphTRef.current = 0
           collapsingRef.current = false
+          preDismissRef.current = false
           setShowBody(false)
           aDims.current = { ...targetDims }
           flush()
@@ -365,7 +401,29 @@ export const GoeyToast: FC<GoeyToastProps> = ({
     setShowBody(false)
     morphTRef.current = 0
     flush()
-  }, [isExpanded, flush])
+  }, [isExpanded, flush, prefersReducedMotion])
+
+  // Pre-dismiss collapse: shrink back to pill before Sonner removes the toast
+  useEffect(() => {
+    if (!showBody || actionSuccess || dismissing) return
+
+    const expandDelayMs = prefersReducedMotion ? 0 : (timing?.expandDelay ?? 330)
+    const collapseMs = prefersReducedMotion ? 10 : ((timing?.collapseDuration ?? 0.9) * 1000)
+    const displayMs = timing?.displayDuration ?? DEFAULT_DISPLAY_DURATION
+
+    // Start collapse so it finishes right before Sonner dismisses
+    const delay = displayMs - expandDelayMs - collapseMs
+    if (delay <= 0) return
+
+    const timer = setTimeout(() => {
+      expandedDimsRef.current = { ...aDims.current }
+      collapsingRef.current = true
+      preDismissRef.current = true
+      setDismissing(true)
+    }, delay)
+
+    return () => clearTimeout(timer)
+  }, [showBody, actionSuccess, dismissing, prefersReducedMotion])
 
   // Phase 2: morph from pill → blob
   useEffect(() => {
@@ -373,6 +431,16 @@ export const GoeyToast: FC<GoeyToastProps> = ({
       morphTRef.current = 0
       morphCtrl.current?.stop()
       flush()
+      return
+    }
+
+    if (prefersReducedMotion) {
+      pillResizeCtrl.current?.stop()
+      morphCtrl.current?.stop()
+      morphTRef.current = 1
+      aDims.current = { ...dimsRef.current }
+      flush()
+      syncSonnerHeights(wrapperRef.current)
       return
     }
 
@@ -384,7 +452,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
       const startDims = { ...aDims.current }
       morphCtrl.current = animate(0, 1, {
         type: 'spring',
-        duration: timing?.expandDuration ?? 0.6,
+        duration: timing?.expandDuration ?? 0.9,
         bounce: 0.2,
         onUpdate: (t) => {
           morphTRef.current = t
@@ -409,7 +477,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
       cancelAnimationFrame(raf)
       morphCtrl.current?.stop()
     }
-  }, [showBody, flush])
+  }, [showBody, flush, prefersReducedMotion])
 
   // Keep Sonner's toast stacking in sync when it re-renders (e.g. hover expand/collapse).
   // Sonner overwrites --offset/--initial-height with stale values from its React state,
@@ -460,53 +528,65 @@ export const GoeyToast: FC<GoeyToastProps> = ({
     return <IconComponent size={18} />
   }
 
+  const iconTransition = prefersReducedMotion ? { duration: 0.01 } : { duration: 0.2 }
+  const iconEl = (
+    <div className={`${styles.iconWrapper}${classNames?.icon ? ` ${classNames.icon}` : ''}`}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={isLoading ? 'spinner' : effectivePhase}
+          initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.5 }}
+          transition={iconTransition}
+        >
+          {renderIcon()}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+  const titleEl = (
+    <span className={`${styles.title}${classNames?.title ? ` ${classNames.title}` : ''}`}>{effectiveTitle}</span>
+  )
+
   const iconAndTitle = (
-    <>
-      <div className={`${styles.iconWrapper}${classNames?.icon ? ` ${classNames.icon}` : ''}`}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={isLoading ? 'spinner' : effectivePhase}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderIcon()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      <span className={`${styles.title}${classNames?.title ? ` ${classNames.title}` : ''}`}>{effectiveTitle}</span>
-    </>
+    <>{iconEl}{titleEl}</>
   )
 
   return (
-    <div ref={wrapperRef} className={`${styles.wrapper}${classNames?.wrapper ? ` ${classNames.wrapper}` : ''}`}>
+    <div ref={wrapperRef} className={`${styles.wrapper}${classNames?.wrapper ? ` ${classNames.wrapper}` : ''}`} style={isRight ? { marginLeft: 'auto', transform: 'scaleX(-1)' } : undefined} role={effectivePhase === 'error' ? 'alert' : 'status'} aria-live={effectivePhase === 'error' ? 'assertive' : 'polite'} aria-atomic="true">
       {/* SVG background — overflow visible, path controls shape */}
       <svg
         className={styles.blobSvg}
         aria-hidden
       >
-        <path ref={pathRef} fill={fillColor} />
+        <path
+          ref={pathRef}
+          fill={fillColor}
+          stroke={borderColor || 'none'}
+          strokeWidth={borderColor ? (borderWidth ?? 1.5) : 0}
+        />
       </svg>
 
-      {/* Content */}
+      {/* Content — un-flip so text reads normally */}
       <div
         ref={contentRef}
         className={`${styles.content} ${showBody ? styles.contentExpanded : styles.contentCompact}${classNames?.content ? ` ${classNames.content}` : ''}`}
+        style={isRight ? { transform: 'scaleX(-1)', textAlign: 'right' } : { textAlign: 'left' }}
       >
         <div ref={headerRef} className={`${styles.header} ${titleColorMap[effectivePhase]}${classNames?.header ? ` ${classNames.header}` : ''}`}>
           {iconAndTitle}
         </div>
 
         <AnimatePresence>
-          {showBody && hasDescription && (
+          {showBody && hasDescription && !dismissing && (
             <motion.div
               key="description"
               className={`${styles.description}${classNames?.description ? ` ${classNames.description}` : ''}`}
-              initial={{ opacity: 0 }}
+              style={{ textAlign: 'left' }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+              transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             >
               {effectiveDescription}
             </motion.div>
@@ -514,19 +594,20 @@ export const GoeyToast: FC<GoeyToastProps> = ({
         </AnimatePresence>
 
         <AnimatePresence>
-          {showBody && hasAction && effectiveAction && (
+          {showBody && hasAction && effectiveAction && !dismissing && (
             <motion.div
               key="action"
               className={`${styles.actionWrapper}${classNames?.actionWrapper ? ` ${classNames.actionWrapper}` : ''}`}
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+              transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
             >
               <button
                 className={`${styles.actionButton} ${actionColorMap[effectivePhase]}${classNames?.actionButton ? ` ${classNames.actionButton}` : ''}`}
                 onClick={handleActionClick}
                 type="button"
+                aria-label={effectiveAction.label}
               >
                 {effectiveAction.label}
               </button>

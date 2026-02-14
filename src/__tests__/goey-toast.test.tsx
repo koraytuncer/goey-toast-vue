@@ -22,6 +22,7 @@ vi.mock('sonner', () => ({
   ),
 }))
 
+import { toast } from 'sonner'
 import { SuccessIcon, ErrorIcon, WarningIcon, InfoIcon, SpinnerIcon } from '../icons'
 import { GoeyToast } from '../components/GoeyToast'
 import { GoeyToaster } from '../components/GoeyToaster'
@@ -179,5 +180,284 @@ describe('goeyToast API', () => {
 
   it('has dismiss method as a function', () => {
     expect(typeof goeyToast.dismiss).toBe('function')
+  })
+})
+
+describe('goeyToast.promise', () => {
+  const mockCustom = toast.custom as ReturnType<typeof vi.fn>
+
+  beforeEach(() => { mockCustom.mockClear() })
+
+  function renderPromiseToast<T>(promise: Promise<T>, data: Parameters<typeof goeyToast.promise<T>>[1]) {
+    goeyToast.promise(promise, data)
+    const renderFn = mockCustom.mock.calls[0][0]
+    return render(renderFn())
+  }
+
+  it('calls toast.custom when promise is invoked', () => {
+    const promise = new Promise(() => {})
+    goeyToast.promise(promise, {
+      loading: 'Loading...',
+      success: 'Done!',
+      error: 'Failed',
+    })
+    expect(mockCustom).toHaveBeenCalledTimes(1)
+    expect(mockCustom).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ id: expect.any(String), duration: undefined })
+    )
+  })
+
+  it('passes Infinity duration when description is provided', () => {
+    const promise = new Promise(() => {})
+    goeyToast.promise(promise, {
+      loading: 'Loading...',
+      success: 'Done!',
+      error: 'Failed',
+      description: { loading: 'Please wait' },
+    })
+    expect(mockCustom).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ duration: Infinity })
+    )
+  })
+
+  it('passes Infinity duration when timing.displayDuration is set', () => {
+    const promise = new Promise(() => {})
+    goeyToast.promise(promise, {
+      loading: 'Loading...',
+      success: 'Done!',
+      error: 'Failed',
+      timing: { displayDuration: 5000 },
+    })
+    expect(mockCustom).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ duration: Infinity })
+    )
+  })
+
+  it('renders loading state initially', () => {
+    const promise = new Promise(() => {})
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Save failed',
+    })
+    expect(screen.getByText('Saving...')).toBeInTheDocument()
+  })
+
+  it('renders loading description when provided', () => {
+    const promise = new Promise(() => {})
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Save failed',
+      description: { loading: 'Please wait while we save your data' },
+    })
+    expect(screen.getByText('Saving...')).toBeInTheDocument()
+  })
+
+  it('transitions to success state when promise resolves with string title', async () => {
+    let resolve: (value: string) => void
+    const promise = new Promise<string>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Save failed',
+    })
+    expect(screen.getByText('Saving...')).toBeInTheDocument()
+
+    await act(async () => { resolve!('ok') })
+
+    expect(screen.getByText('Saved!')).toBeInTheDocument()
+  })
+
+  it('transitions to success state with function title receiving resolved data', async () => {
+    let resolve: (value: { count: number }) => void
+    const promise = new Promise<{ count: number }>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Uploading...',
+      success: (data) => `Uploaded ${data.count} files`,
+      error: 'Upload failed',
+    })
+    expect(screen.getByText('Uploading...')).toBeInTheDocument()
+
+    await act(async () => { resolve!({ count: 5 }) })
+
+    expect(screen.getByText('Uploaded 5 files')).toBeInTheDocument()
+  })
+
+  it('transitions to error state when promise rejects with string title', async () => {
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Deleting...',
+      success: 'Deleted!',
+      error: 'Delete failed',
+    })
+    expect(screen.getByText('Deleting...')).toBeInTheDocument()
+
+    await act(async () => { reject!(new Error('Network error')) })
+
+    expect(screen.getByText('Delete failed')).toBeInTheDocument()
+  })
+
+  it('transitions to error state with function title receiving error', async () => {
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: (err) => `Error: ${(err as Error).message}`,
+    })
+
+    await act(async () => { reject!(new Error('Timeout')) })
+
+    expect(screen.getByText('Error: Timeout')).toBeInTheDocument()
+  })
+
+  it('shows success description as string after promise resolves', async () => {
+    vi.useFakeTimers()
+    let resolve: (value: string) => void
+    const promise = new Promise<string>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Failed',
+      description: { success: 'Your changes have been saved' },
+    })
+
+    await act(async () => { resolve!('ok') })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    expect(screen.getByText('Your changes have been saved')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows success description from function after promise resolves', async () => {
+    vi.useFakeTimers()
+    let resolve: (value: { name: string }) => void
+    const promise = new Promise<{ name: string }>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Creating...',
+      success: 'Created!',
+      error: 'Failed',
+      description: { success: (data) => `Created project "${data.name}"` },
+    })
+
+    await act(async () => { resolve!({ name: 'My Project' }) })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    expect(screen.getByText('Created project "My Project"')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows error description as string after promise rejects', async () => {
+    vi.useFakeTimers()
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Failed',
+      description: { error: 'Please try again later' },
+    })
+
+    await act(async () => { reject!(new Error('oops')) })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    expect(screen.getByText('Please try again later')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows error description from function after promise rejects', async () => {
+    vi.useFakeTimers()
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Connecting...',
+      success: 'Connected!',
+      error: 'Connection failed',
+      description: { error: (err) => `Reason: ${(err as Error).message}` },
+    })
+
+    await act(async () => { reject!(new Error('DNS resolution failed')) })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    expect(screen.getByText('Reason: DNS resolution failed')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows success action button after promise resolves', async () => {
+    vi.useFakeTimers()
+    const onClick = vi.fn()
+    let resolve: (value: string) => void
+    const promise = new Promise<string>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Processing...',
+      success: 'Done!',
+      error: 'Failed',
+      action: { success: { label: 'View', onClick } },
+    })
+
+    await act(async () => { resolve!('ok') })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    const button = screen.getByRole('button', { name: 'View' })
+    expect(button).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows error action button after promise rejects', async () => {
+    vi.useFakeTimers()
+    const onClick = vi.fn()
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Save failed',
+      action: { error: { label: 'Retry', onClick } },
+    })
+
+    await act(async () => { reject!(new Error('fail')) })
+    act(() => { vi.advanceTimersByTime(400) })
+
+    const button = screen.getByRole('button', { name: 'Retry' })
+    expect(button).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('calls toast.custom again to reset duration on success with description', async () => {
+    let resolve: (value: string) => void
+    const promise = new Promise<string>((r) => { resolve = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Failed',
+      description: { success: 'All good' },
+    })
+
+    mockCustom.mockClear()
+    await act(async () => { resolve!('ok') })
+
+    expect(mockCustom).toHaveBeenCalled()
+  })
+
+  it('calls toast.custom again to reset duration on error with action', async () => {
+    const onClick = vi.fn()
+    let reject: (reason: unknown) => void
+    const promise = new Promise<string>((_, r) => { reject = r })
+    renderPromiseToast(promise, {
+      loading: 'Saving...',
+      success: 'Saved!',
+      error: 'Failed',
+      action: { error: { label: 'Retry', onClick } },
+    })
+
+    mockCustom.mockClear()
+    await act(async () => { reject!(new Error('fail')) })
+
+    expect(mockCustom).toHaveBeenCalled()
   })
 })

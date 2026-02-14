@@ -36,6 +36,8 @@ export interface GoeyToastData {
   duration?: number
   classNames?: GoeyToastClassNames
   fillColor?: string
+  borderColor?: string
+  borderWidth?: number
 }
 
 export interface GoeyToastOptions {
@@ -46,6 +48,8 @@ export interface GoeyToastOptions {
   id?: string | number
   classNames?: GoeyToastClassNames
   fillColor?: string
+  borderColor?: string
+  borderWidth?: number
   timing?: GoeyToastTimings
 }
 
@@ -64,6 +68,8 @@ export interface GoeyPromiseData<T> {
   }
   classNames?: GoeyToastClassNames
   fillColor?: string
+  borderColor?: string
+  borderWidth?: number
   timing?: GoeyToastTimings
 }
 

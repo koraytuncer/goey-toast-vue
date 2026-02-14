@@ -1,0 +1,297 @@
+# goey-toast
+
+Morphing toast notifications for React. Organic blob animations powered by [Sonner](https://sonner.emilkowal.dev/) and [Framer Motion](https://www.framer.com/motion/).
+
+## Features
+
+- Organic blob morph animation (pill &rarr; blob &rarr; pill)
+- Five toast types: default, success, error, warning, info
+- Promise toasts with loading &rarr; success/error transitions
+- Action buttons with optional success label morph-back
+- Description body supporting strings and React components
+- Configurable timing for expand delay, morph duration, collapse, and display
+- Custom fill color, border color, and border width
+- CSS class overrides via `classNames` prop
+- Position support with automatic horizontal mirroring for right-side positions
+- Pre-dismiss collapse animation
+
+## Installation
+
+```bash
+npm install goey-toast
+```
+
+### Peer Dependencies
+
+goey-toast requires the following peer dependencies:
+
+```bash
+npm install react react-dom framer-motion
+```
+
+| Package        | Version    |
+| -------------- | ---------- |
+| react          | >= 18.0.0  |
+| react-dom      | >= 18.0.0  |
+| framer-motion  | >= 10.0.0  |
+
+### CSS Import (Required)
+
+You **must** import the goey-toast stylesheet for the component to render correctly:
+
+```tsx
+import 'goey-toast/styles.css'
+```
+
+Add this import once in your app's entry point (e.g., `main.tsx` or `App.tsx`). Without it, toasts will appear unstyled.
+
+## Quick Start
+
+```tsx
+import { GoeyToaster, goeyToast } from 'goey-toast'
+import 'goey-toast/styles.css'
+
+function App() {
+  return (
+    <>
+      <GoeyToaster position="bottom-right" />
+      <button onClick={() => goeyToast.success('Saved!')}>
+        Save
+      </button>
+    </>
+  )
+}
+```
+
+## API Reference
+
+### `goeyToast` Methods
+
+```ts
+goeyToast(title, options?)              // default (neutral)
+goeyToast.success(title, options?)      // green
+goeyToast.error(title, options?)        // red
+goeyToast.warning(title, options?)      // yellow
+goeyToast.info(title, options?)         // blue
+goeyToast.promise(promise, data)        // loading -> success/error
+goeyToast.dismiss(toastId?)             // dismiss one or all toasts
+```
+
+### `GoeyToastOptions`
+
+Options passed as the second argument to `goeyToast()` and type-specific methods.
+
+| Option        | Type                 | Description                        |
+| ------------- | -------------------- | ---------------------------------- |
+| `description` | `ReactNode`          | Body content (string or component) |
+| `action`      | `GoeyToastAction`    | Action button configuration        |
+| `icon`        | `ReactNode`          | Custom icon override               |
+| `duration`    | `number`             | Display duration in ms             |
+| `id`          | `string \| number`   | Unique toast identifier            |
+| `classNames`  | `GoeyToastClassNames`| CSS class overrides                |
+| `fillColor`   | `string`             | Background color of the blob       |
+| `borderColor` | `string`             | Border color of the blob           |
+| `borderWidth` | `number`             | Border width in px (default 1.5)   |
+| `timing`      | `GoeyToastTimings`   | Animation timing overrides         |
+
+### `GoeyToastAction`
+
+| Property       | Type       | Required | Description                                  |
+| -------------- | ---------- | -------- | -------------------------------------------- |
+| `label`        | `string`   | Yes      | Button text                                  |
+| `onClick`      | `() => void` | Yes   | Click handler                                |
+| `successLabel` | `string`   | No       | Label shown after click (morphs back to pill)|
+
+### `GoeyToastTimings`
+
+Fine-tune animation speeds per toast.
+
+| Property           | Type     | Default | Description                          |
+| ------------------ | -------- | ------- | ------------------------------------ |
+| `expandDelay`      | `number` | 330     | Milliseconds before expand starts    |
+| `expandDuration`   | `number` | 0.9     | Seconds for pill-to-blob morph       |
+| `collapseDuration` | `number` | 0.9     | Seconds for blob-to-pill morph       |
+| `displayDuration`  | `number` | 4000    | Milliseconds toast stays expanded    |
+
+### `GoeyToastClassNames`
+
+Override styles for any part of the toast.
+
+| Key             | Target           |
+| --------------- | ---------------- |
+| `wrapper`       | Outer container  |
+| `content`       | Content area     |
+| `header`        | Icon + title row |
+| `title`         | Title text       |
+| `icon`          | Icon wrapper     |
+| `description`   | Body text        |
+| `actionWrapper` | Button container |
+| `actionButton`  | Action button    |
+
+### `GoeyToasterProps`
+
+Props for the `<GoeyToaster />` component.
+
+| Prop         | Type                                  | Default          | Description                                   |
+| ------------ | ------------------------------------- | ---------------- | --------------------------------------------- |
+| `position`   | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'bottom-right'` | Toast position (right-side positions auto-mirror the blob) |
+| `duration`   | `number`                              | --               | Default display duration in ms                |
+| `gap`        | `number`                              | `14`             | Gap between stacked toasts (px)               |
+| `offset`     | `number \| string`                    | `'24px'`         | Distance from screen edge                     |
+| `theme`      | `'light' \| 'dark'`                   | `'light'`        | Color theme                                   |
+| `toastOptions` | `Partial<ExternalToast>`            | --               | Default options passed to Sonner              |
+
+### `GoeyPromiseData<T>`
+
+Configuration for `goeyToast.promise()`.
+
+| Property      | Type                                          | Required | Description                                    |
+| ------------- | --------------------------------------------- | -------- | ---------------------------------------------- |
+| `loading`     | `string`                                      | Yes      | Title shown during loading                     |
+| `success`     | `string \| ((data: T) => string)`             | Yes      | Title on success (static or derived from result)|
+| `error`       | `string \| ((error: unknown) => string)`      | Yes      | Title on error (static or derived from error)  |
+| `description` | `object`                                      | No       | Per-phase descriptions (see below)             |
+| `action`      | `object`                                      | No       | Per-phase action buttons (see below)           |
+| `classNames`  | `GoeyToastClassNames`                         | No       | CSS class overrides                            |
+| `fillColor`   | `string`                                      | No       | Background color of the blob                   |
+| `borderColor` | `string`                                      | No       | Border color of the blob                       |
+| `borderWidth` | `number`                                      | No       | Border width in px                             |
+| `timing`      | `GoeyToastTimings`                            | No       | Animation timing overrides                     |
+
+**`description` sub-fields:**
+
+| Key       | Type                                             |
+| --------- | ------------------------------------------------ |
+| `loading` | `ReactNode`                                      |
+| `success` | `ReactNode \| ((data: T) => ReactNode)`          |
+| `error`   | `ReactNode \| ((error: unknown) => ReactNode)`   |
+
+**`action` sub-fields:**
+
+| Key       | Type              |
+| --------- | ----------------- |
+| `success` | `GoeyToastAction` |
+| `error`   | `GoeyToastAction` |
+
+## Usage Examples
+
+### Description
+
+```tsx
+goeyToast.error('Payment failed', {
+  description: 'Your card was declined. Please try again.',
+})
+```
+
+### Custom React Component as Description
+
+```tsx
+goeyToast.success('Deployment complete', {
+  description: (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div>
+        <span>Environment:</span> <strong>Production</strong>
+      </div>
+      <div>
+        <span>Branch:</span> <strong>main @ 3f8a2c1</strong>
+      </div>
+    </div>
+  ),
+})
+```
+
+### Action Button with Success Label
+
+```tsx
+goeyToast.info('Share link ready', {
+  description: 'Your link has been generated.',
+  action: {
+    label: 'Copy to Clipboard',
+    onClick: () => navigator.clipboard.writeText(url),
+    successLabel: 'Copied!',
+  },
+})
+```
+
+### Promise Toast
+
+```tsx
+goeyToast.promise(saveData(), {
+  loading: 'Saving...',
+  success: 'Changes saved',
+  error: 'Something went wrong',
+  description: {
+    success: 'All changes have been synced.',
+    error: 'Please try again later.',
+  },
+  action: {
+    error: {
+      label: 'Retry',
+      onClick: () => retry(),
+    },
+  },
+})
+```
+
+### Custom Styling
+
+```tsx
+goeyToast.success('Styled!', {
+  fillColor: '#1a1a2e',
+  borderColor: '#333',
+  borderWidth: 2,
+  classNames: {
+    wrapper: 'my-wrapper',
+    title: 'my-title',
+    description: 'my-desc',
+    actionButton: 'my-btn',
+  },
+})
+```
+
+### Custom Timing
+
+```tsx
+goeyToast.success('Saved', {
+  description: 'Your changes have been synced.',
+  timing: {
+    expandDelay: 200,
+    expandDuration: 0.6,
+    collapseDuration: 0.6,
+    displayDuration: 5000,
+  },
+})
+```
+
+## Exports
+
+```ts
+// Components
+export { GoeyToaster } from 'goey-toast'
+
+// Toast function
+export { goeyToast } from 'goey-toast'
+
+// Types
+export type {
+  GoeyToastOptions,
+  GoeyPromiseData,
+  GoeyToasterProps,
+  GoeyToastAction,
+  GoeyToastClassNames,
+  GoeyToastTimings,
+} from 'goey-toast'
+```
+
+## Browser Support
+
+goey-toast works in all modern browsers that support:
+
+- CSS Modules
+- SVG path animations
+- ResizeObserver
+- `framer-motion` (Chrome, Firefox, Safari, Edge)
+
+## License
+
+[MIT](./LICENSE)

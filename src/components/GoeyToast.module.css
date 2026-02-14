@@ -1,3 +1,6 @@
+/* Style detection marker — used by GoeyToaster to verify CSS is loaded */
+:global([data-goey-toast-css]) { --goey-toast: 1; }
+
 /* ============================================
    Wrapper — single container for both states
    ============================================ */
@@ -15,8 +18,8 @@
   left: 0;
   overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.1))
-          drop-shadow(0 2px 8px rgba(0, 0, 0, 0.06));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.06))
+          drop-shadow(0 1px 4px rgba(0, 0, 0, 0.04));
 }
 
 /* Content on top of SVG background */
@@ -142,3 +145,58 @@
 }
 .actionInfo:hover { background: #90CAF9; }
 .actionInfo:active { background: #64B5F6; }
+
+/* ============================================
+   Dark mode
+   ============================================ */
+
+:global([data-sonner-toaster][data-theme="dark"]) .blobSvg {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))
+          drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+}
+
+:global([data-sonner-toaster][data-theme="dark"]) .titleDefault { color: #ccc; }
+:global([data-sonner-toaster][data-theme="dark"]) .titleSuccess { color: #66BB6A; }
+:global([data-sonner-toaster][data-theme="dark"]) .titleError { color: #EF5350; }
+:global([data-sonner-toaster][data-theme="dark"]) .titleWarning { color: #FFB300; }
+:global([data-sonner-toaster][data-theme="dark"]) .titleInfo { color: #42A5F5; }
+:global([data-sonner-toaster][data-theme="dark"]) .titleLoading { color: #ccc; }
+
+:global([data-sonner-toaster][data-theme="dark"]) .description {
+  color: #aaa;
+}
+
+:global([data-sonner-toaster][data-theme="dark"]) .actionDefault {
+  background: #3a3a3a;
+  color: #ccc;
+}
+:global([data-sonner-toaster][data-theme="dark"]) .actionDefault:hover { background: #444; }
+:global([data-sonner-toaster][data-theme="dark"]) .actionDefault:active { background: #4e4e4e; }
+
+:global([data-sonner-toaster][data-theme="dark"]) .actionSuccess {
+  background: #1b5e20;
+  color: #66BB6A;
+}
+:global([data-sonner-toaster][data-theme="dark"]) .actionSuccess:hover { background: #2e7d32; }
+:global([data-sonner-toaster][data-theme="dark"]) .actionSuccess:active { background: #388e3c; }
+
+:global([data-sonner-toaster][data-theme="dark"]) .actionError {
+  background: #b71c1c;
+  color: #EF5350;
+}
+:global([data-sonner-toaster][data-theme="dark"]) .actionError:hover { background: #c62828; }
+:global([data-sonner-toaster][data-theme="dark"]) .actionError:active { background: #d32f2f; }
+
+:global([data-sonner-toaster][data-theme="dark"]) .actionWarning {
+  background: #4a3800;
+  color: #FFB300;
+}
+:global([data-sonner-toaster][data-theme="dark"]) .actionWarning:hover { background: #5c4600; }
+:global([data-sonner-toaster][data-theme="dark"]) .actionWarning:active { background: #6e5400; }
+
+:global([data-sonner-toaster][data-theme="dark"]) .actionInfo {
+  background: #0d47a1;
+  color: #42A5F5;
+}
+:global([data-sonner-toaster][data-theme="dark"]) .actionInfo:hover { background: #1565c0; }
+:global([data-sonner-toaster][data-theme="dark"]) .actionInfo:active { background: #1976d2; }

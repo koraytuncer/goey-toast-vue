@@ -2,9 +2,22 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GoeyToast } from '../components/GoeyToast'
 
+// Helper to mock matchMedia for reduced motion tests
+function mockReducedMotion(enabled: boolean) {
+  vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
+    matches: enabled,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })))
+}
+
 describe('GoeyToast', () => {
   beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { vi.useRealTimers() })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
 
   it('renders title text', () => {
     render(<GoeyToast title="Loading..." type="success" phase="loading" />)
@@ -202,6 +215,68 @@ describe('GoeyToast', () => {
       />
     )
     const path = container.querySelector('svg path')!
-    expect(path.getAttribute('fill')).toBe('#F2F1EC')
+    expect(path.getAttribute('fill')).toBe('#ffffff')
+  })
+
+  describe('prefers-reduced-motion', () => {
+    it('expands immediately with no delay when reduced motion is preferred', () => {
+      mockReducedMotion(true)
+      const { container } = render(
+        <GoeyToast
+          title="Done!"
+          description="Your file was saved."
+          type="success"
+          phase="success"
+        />
+      )
+      // With reduced motion, expand delay is 0 so showBody should be true immediately
+      act(() => { vi.advanceTimersByTime(1) })
+      const contentEl = container.querySelector('[class*="content"]') as HTMLElement
+      expect(contentEl.className).toContain('Expanded')
+      expect(screen.getByText('Your file was saved.')).toBeInTheDocument()
+    })
+
+    it('still renders title and description correctly with reduced motion', () => {
+      mockReducedMotion(true)
+      render(
+        <GoeyToast
+          title="Info"
+          description="Details here."
+          type="info"
+          phase="info"
+        />
+      )
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(screen.getByText('Info')).toBeInTheDocument()
+      expect(screen.getByText('Details here.')).toBeInTheDocument()
+    })
+
+    it('still renders action button with reduced motion', () => {
+      mockReducedMotion(true)
+      const onClick = vi.fn()
+      render(
+        <GoeyToast
+          title="Error"
+          description="Something went wrong."
+          type="error"
+          phase="error"
+          action={{ label: 'Retry', onClick }}
+        />
+      )
+      act(() => { vi.advanceTimersByTime(1) })
+      const button = screen.getByRole('button', { name: 'Retry' })
+      expect(button).toBeInTheDocument()
+      fireEvent.click(button)
+      expect(onClick).toHaveBeenCalledOnce()
+    })
+
+    it('renders compact pill without motion when no description', () => {
+      mockReducedMotion(true)
+      const { container } = render(
+        <GoeyToast title="Done!" type="success" phase="success" />
+      )
+      const contentEl = container.querySelector('[class*="content"]') as HTMLElement
+      expect(contentEl.className).toContain('Compact')
+    })
   })
 })
