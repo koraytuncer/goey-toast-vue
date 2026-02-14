@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { ExternalToast, ToasterProps } from 'sonner'
 
-export type GoeyToastType = 'success' | 'error' | 'warning' | 'info'
+export type GoeyToastType = 'default' | 'success' | 'error' | 'warning' | 'info'
 
 export interface GoeyToastTimings {
   expandDelay?: number
@@ -67,7 +67,7 @@ export interface GoeyPromiseData<T> {
   timing?: GoeyToastTimings
 }
 
-export type GoeyToastPhase = 'loading' | 'success' | 'error' | 'warning' | 'info'
+export type GoeyToastPhase = 'loading' | 'default' | 'success' | 'error' | 'warning' | 'info'
 
 export interface GoeyToasterProps {
   position?: ToasterProps['position']

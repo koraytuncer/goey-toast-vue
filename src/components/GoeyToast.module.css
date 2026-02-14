@@ -64,6 +64,7 @@
   padding: 0 4px 0 2px;
 }
 
+.titleDefault { color: #555; }
 .titleSuccess { color: #4CAF50; }
 .titleError { color: #E53935; }
 .titleWarning { color: #C49000; }
@@ -106,6 +107,13 @@
   outline: none;
   box-shadow: none;
 }
+
+.actionDefault {
+  background: #E8E8E8;
+  color: #555;
+}
+.actionDefault:hover { background: #DCDCDC; }
+.actionDefault:active { background: #D0D0D0; }
 
 .actionSuccess {
   background: #C8E6C9;

@@ -21,6 +21,9 @@ function App() {
         <div className="section">
           <h2>Simple Toasts</h2>
           <div className="buttons">
+            <button onClick={() => goeyToast('Notification received')}>
+              Default
+            </button>
             <button onClick={() => goeyToast.success('Changes Saved')}>
               Success
             </button>
@@ -51,9 +54,9 @@ function App() {
             </button>
             <button
               onClick={() =>
-                goeyToast.error('Something went wrong', {
+                goeyToast.error('Connection lost', {
                   description:
-                    "You've used 95% of your available storage. Please upgrade and plan to continue.",
+                    'Unable to reach the server. Check your internet connection and try again.',
                 })
               }
             >
@@ -67,12 +70,12 @@ function App() {
           <div className="buttons">
             <button
               onClick={() =>
-                goeyToast.error('Something went wrong', {
+                goeyToast.error('Payment failed', {
                   description:
-                    "You've used 95% of your available storage. Please upgrade and plan to continue.",
+                    'Your card ending in 4242 was declined. Please update your payment method to continue.',
                   action: {
-                    label: 'Action Button',
-                    onClick: () => goeyToast.success('Action clicked!'),
+                    label: 'Update Payment',
+                    onClick: () => goeyToast.success('Redirecting...'),
                   },
                 })
               }
@@ -92,6 +95,40 @@ function App() {
               }
             >
               Action → Success Pill
+            </button>
+          </div>
+        </div>
+
+        <div className="section">
+          <h2>Custom Component Body</h2>
+          <div className="buttons">
+            <button
+              onClick={() =>
+                goeyToast.success('Deployment complete', {
+                  description: (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 300 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                        <span style={{ color: '#888' }}>Environment</span>
+                        <span style={{ fontWeight: 600 }}>Production</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                        <span style={{ color: '#888' }}>Branch</span>
+                        <span style={{ fontWeight: 600 }}>main @ 3f8a2c1</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                        <span style={{ color: '#888' }}>Duration</span>
+                        <span style={{ fontWeight: 600 }}>2m 14s</span>
+                      </div>
+                      <div style={{ height: 1, background: '#e5e5e5' }} />
+                      <div style={{ fontSize: 11, color: '#888' }}>
+                        https://my-app.vercel.app
+                      </div>
+                    </div>
+                  ),
+                })
+              }
+            >
+              ReactNode Description
             </button>
           </div>
         </div>

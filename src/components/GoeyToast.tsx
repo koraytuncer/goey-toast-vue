@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, type FC, type ReactNode } from 'react'
 import { motion, AnimatePresence, animate } from 'framer-motion'
 import type { GoeyToastAction, GoeyToastClassNames, GoeyToastPhase, GoeyToastTimings, GoeyToastType } from '../types'
-import { SuccessIcon, ErrorIcon, WarningIcon, InfoIcon, SpinnerIcon } from '../icons'
+import { DefaultIcon, SuccessIcon, ErrorIcon, WarningIcon, InfoIcon, SpinnerIcon } from '../icons'
 import styles from './GoeyToast.module.css'
 
 export interface GoeyToastProps {
@@ -17,6 +17,7 @@ export interface GoeyToastProps {
 }
 
 const phaseIconMap: Record<Exclude<GoeyToastPhase, 'loading'>, FC<{ size?: number; className?: string }>> = {
+  default: DefaultIcon,
   success: SuccessIcon,
   error: ErrorIcon,
   warning: WarningIcon,
@@ -25,6 +26,7 @@ const phaseIconMap: Record<Exclude<GoeyToastPhase, 'loading'>, FC<{ size?: numbe
 
 const titleColorMap: Record<GoeyToastPhase, string> = {
   loading: styles.titleLoading,
+  default: styles.titleDefault,
   success: styles.titleSuccess,
   error: styles.titleError,
   warning: styles.titleWarning,
@@ -33,6 +35,7 @@ const titleColorMap: Record<GoeyToastPhase, string> = {
 
 const actionColorMap: Record<GoeyToastPhase, string> = {
   loading: styles.actionInfo,
+  default: styles.actionDefault,
   success: styles.actionSuccess,
   error: styles.actionError,
   warning: styles.actionWarning,
@@ -234,7 +237,9 @@ export const GoeyToast: FC<GoeyToastProps> = ({
     contentRef.current.style.maxHeight = ''
     contentRef.current.style.width = ''
 
-    const pw = headerRef.current.offsetWidth + 24
+    const cs = getComputedStyle(contentRef.current)
+    const paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+    const pw = headerRef.current.offsetWidth + paddingX
     const bw = contentRef.current.offsetWidth
     const th = contentRef.current.offsetHeight
 
@@ -296,8 +301,9 @@ export const GoeyToast: FC<GoeyToastProps> = ({
 
     pillResizeCtrl.current?.stop()
     pillResizeCtrl.current = animate(0, 1, {
+      type: 'spring',
       duration: 0.6,
-      ease: [0.4, 0, 0.2, 1],
+      bounce: 0.2,
       onUpdate: (t) => {
         aDims.current = {
           pw: prev.pw + (target.pw - prev.pw) * t,
@@ -312,7 +318,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   // Phase 1: expand (delay showBody) or collapse (reverse morph)
   useEffect(() => {
     if (isExpanded) {
-      const t1 = setTimeout(() => setShowBody(true), timing?.expandDelay ?? 10)
+      const t1 = setTimeout(() => setShowBody(true), timing?.expandDelay ?? 20)
       return () => clearTimeout(t1)
     }
 
@@ -326,13 +332,15 @@ export const GoeyToast: FC<GoeyToastProps> = ({
         : { ...aDims.current }
 
       // Compute target compact pill dims from current header content
-      // +24 matches compact CSS padding (left 10 + right 14) so pw = bw in compact
-      const targetPw = headerRef.current ? headerRef.current.offsetWidth + 24 : savedDims.pw
+      const csPad = contentRef.current ? getComputedStyle(contentRef.current) : null
+      const padX = csPad ? parseFloat(csPad.paddingLeft) + parseFloat(csPad.paddingRight) : 20
+      const targetPw = headerRef.current ? headerRef.current.offsetWidth + padX : savedDims.pw
       const targetDims = { pw: targetPw, bw: targetPw, th: PH }
 
       morphCtrl.current = animate(morphTRef.current, 0, {
+        type: 'spring',
         duration: timing?.collapseDuration ?? 0.4,
-        ease: [0.4, 0, 0.2, 1],
+        bounce: 0.2,
         onUpdate: (t) => {
           morphTRef.current = t
           // Interpolate dims from expanded toward compact target
@@ -375,8 +383,9 @@ export const GoeyToast: FC<GoeyToastProps> = ({
       // wherever the pill resize left off instead of snapping to target.
       const startDims = { ...aDims.current }
       morphCtrl.current = animate(0, 1, {
+        type: 'spring',
         duration: timing?.expandDuration ?? 0.6,
-        ease: [0.4, 0, 0.2, 1],
+        bounce: 0.2,
         onUpdate: (t) => {
           morphTRef.current = t
           const target = dimsRef.current

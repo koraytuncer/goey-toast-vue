@@ -144,7 +144,7 @@ function createGoeyToast(
 
 export const goeyToast = Object.assign(
   (title: string, options?: GoeyToastOptions) =>
-    createGoeyToast(title, 'info', options),
+    createGoeyToast(title, 'default', options),
   {
     success: (title: string, options?: GoeyToastOptions) =>
       createGoeyToast(title, 'success', options),
