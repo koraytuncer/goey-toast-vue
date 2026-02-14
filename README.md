@@ -2,6 +2,8 @@
 
 Morphing toast notifications for React. Organic blob animations powered by [Sonner](https://sonner.emilkowal.dev/) and [Framer Motion](https://www.framer.com/motion/).
 
+**[Live Demo & Docs](https://goey-toast.vercel.app)**
+
 ## Features
 
 - Organic blob morph animation (pill &rarr; blob &rarr; pill)
