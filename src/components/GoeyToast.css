@@ -16,6 +16,7 @@
    ============================================ */
 .goey-wrapper {
   pointer-events: auto;
+  cursor: default;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   position: relative;
   width: fit-content;

@@ -28,6 +28,7 @@ function GoeyToastWrapper({
   timing,
   spring,
   bounce,
+  toastId,
 }: {
   initialPhase: GoeyToastPhase
   title: string
@@ -42,6 +43,7 @@ function GoeyToastWrapper({
   timing?: GoeyToastTimings
   spring?: boolean
   bounce?: number
+  toastId?: string | number
 }) {
   return (
     <ToastErrorBoundary>
@@ -59,6 +61,7 @@ function GoeyToastWrapper({
         timing={timing}
         spring={spring}
         bounce={bounce}
+        toastId={toastId}
       />
     </ToastErrorBoundary>
   )
@@ -144,13 +147,13 @@ function createGoeyToast(
   type: GoeyToastType,
   options?: GoeyToastOptions
 ) {
-  const baseDuration = options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined)
   const hasExpandedContent = Boolean(options?.description || options?.action)
-  const collapseDurMs = (options?.timing?.collapseDuration ?? 0.9) * 1000
-  // Buffer after collapse so the pill squish animation has time to play
-  const duration = baseDuration != null && hasExpandedContent
-    ? baseDuration + collapseDurMs
-    : baseDuration
+  const baseDuration = options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined)
+  // Expanded toasts: Infinity duration, component controls dismiss (hover re-expand support)
+  // Simple toasts: normal duration
+  const duration = hasExpandedContent ? Infinity : baseDuration
+
+  const toastId = options?.id ?? Math.random().toString(36).slice(2)
 
   return toast.custom(
     () => (
@@ -168,11 +171,12 @@ function createGoeyToast(
         timing={options?.timing}
         spring={options?.spring}
         bounce={options?.bounce}
+        toastId={hasExpandedContent ? toastId : undefined}
       />
     ),
     {
       duration,
-      id: options?.id,
+      id: toastId,
     }
   )
 }

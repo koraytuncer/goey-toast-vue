@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, type FC, type ReactNode } from 'react'
 import { motion, AnimatePresence, animate } from 'framer-motion'
+import { toast as sonnerToast } from 'sonner'
 import type { GoeyToastAction, GoeyToastClassNames, GoeyToastPhase, GoeyToastTimings, GoeyToastType } from '../types'
 import { getGoeyPosition, getGoeySpring, getGoeyBounce } from '../context'
 import { DefaultIcon, SuccessIcon, ErrorIcon, WarningIcon, InfoIcon, SpinnerIcon } from '../icons'
@@ -20,6 +21,7 @@ export interface GoeyToastProps {
   timing?: GoeyToastTimings
   spring?: boolean
   bounce?: number
+  toastId?: string | number
 }
 
 const phaseIconMap: Record<Exclude<GoeyToastPhase, 'loading'>, FC<{ size?: number; className?: string }>> = {
@@ -198,6 +200,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   timing,
   spring: springProp,
   bounce: bounceProp,
+  toastId,
 }) => {
   const position = getGoeyPosition()
   const isRight = position?.includes('right') ?? false
@@ -209,10 +212,13 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   // Action success override state
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [dismissing, setDismissing] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const hoveredRef = useRef(false)
   const collapsingRef = useRef(false)
   const preDismissRef = useRef(false)
   const collapseEndTime = useRef(0)
   const expandedDimsRef = useRef({ pw: 0, bw: 0, th: 0 })
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Effective values (overridden when action success is active)
   const effectiveTitle = actionSuccess ?? title
@@ -574,26 +580,65 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   }, [isExpanded, flush, prefersReducedMotion, useSpring, timing?.collapseDuration, triggerLandingSquish])
 
   // Pre-dismiss collapse: shrink back to pill before Sonner removes the toast
+  // Hover pauses the timer. On unhover, timer restarts with remaining time.
+  const remainingRef = useRef<number | null>(null)
+  const timerStartRef = useRef(0)
   useEffect(() => {
     if (!showBody || actionSuccess || dismissing) return
 
     const expandDelayMs = prefersReducedMotion ? 0 : (timing?.expandDelay ?? 330)
     const collapseMs = prefersReducedMotion ? 10 : ((timing?.collapseDuration ?? 0.9) * 1000)
     const displayMs = timing?.displayDuration ?? DEFAULT_DISPLAY_DURATION
+    const fullDelay = displayMs - expandDelayMs - collapseMs
+    if (fullDelay <= 0) return
 
-    // Start collapse so it finishes right before Sonner dismisses
-    const delay = displayMs - expandDelayMs - collapseMs
-    if (delay <= 0) return
+    // Don't start while hovered
+
+    const delay = remainingRef.current ?? fullDelay
+    timerStartRef.current = Date.now()
 
     const timer = setTimeout(() => {
+      remainingRef.current = null
       expandedDimsRef.current = { ...aDims.current }
       collapsingRef.current = true
       preDismissRef.current = true
       setDismissing(true)
     }, delay)
+    dismissTimerRef.current = timer
 
-    return () => clearTimeout(timer)
-  }, [showBody, actionSuccess, dismissing, prefersReducedMotion])
+    return () => {
+      clearTimeout(timer)
+      // Save remaining time when cleaning up (e.g. hover started)
+      const elapsed = Date.now() - timerStartRef.current
+      const remaining = delay - elapsed
+      if (remaining > 0 && hoveredRef.current) {
+        remainingRef.current = remaining
+      }
+    }
+  }, [showBody, actionSuccess, dismissing, prefersReducedMotion, hovered])
+
+  // Re-expand on hover: if collapsed/collapsing and user hovers, reverse it
+  const canExpand = hasDescription || hasAction
+  useEffect(() => {
+    if (!hovered || !canExpand || !dismissing) return
+    // Stop collapse morph, reset state, re-expand
+    morphCtrl.current?.stop()
+    collapsingRef.current = false
+    preDismissRef.current = false
+    remainingRef.current = null // fresh timer on next cycle
+    setDismissing(false)
+    // Set showBody immediately so the expand morph starts without Phase 1 delay
+    setShowBody(true)
+  }, [hovered, dismissing, canExpand])
+
+  // Dismiss from Sonner after collapse completes and user is not hovering
+  useEffect(() => {
+    if (!toastId || !dismissing || showBody || hovered) return
+    const t = setTimeout(() => {
+      if (!hoveredRef.current) sonnerToast.dismiss(toastId)
+    }, 800)
+    return () => clearTimeout(t)
+  }, [dismissing, showBody, hovered, toastId])
 
   // Phase 2: morph from pill → blob
   useEffect(() => {
@@ -753,7 +798,7 @@ export const GoeyToast: FC<GoeyToastProps> = ({
   )
 
   return (
-    <div ref={wrapperRef} className={`${styles.wrapper}${classNames?.wrapper ? ` ${classNames.wrapper}` : ''}`} style={isRight ? { marginLeft: 'auto', transform: 'scaleX(-1)' } : undefined} role={effectivePhase === 'error' ? 'alert' : 'status'} aria-live={effectivePhase === 'error' ? 'assertive' : 'polite'} aria-atomic="true">
+    <div ref={wrapperRef} className={`${styles.wrapper}${classNames?.wrapper ? ` ${classNames.wrapper}` : ''}`} style={isRight ? { marginLeft: 'auto', transform: 'scaleX(-1)' } : undefined} role={effectivePhase === 'error' ? 'alert' : 'status'} aria-live={effectivePhase === 'error' ? 'assertive' : 'polite'} aria-atomic="true" onMouseEnter={() => { hoveredRef.current = true; setHovered(true) }} onMouseLeave={() => { hoveredRef.current = false; setHovered(false) }}>
       {/* SVG background — overflow visible, path controls shape */}
       <svg
         className={styles.blobSvg}
