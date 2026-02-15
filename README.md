@@ -104,6 +104,7 @@ Options passed as the second argument to `goeyToast()` and type-specific methods
 | `borderWidth` | `number`             | Border width in px (default 1.5)   |
 | `timing`      | `GoeyToastTimings`   | Animation timing overrides         |
 | `spring`      | `boolean`            | Enable spring/bounce animations (default `true`) |
+| `bounce`      | `number`             | Spring intensity from `0.05` (subtle) to `0.8` (dramatic), default `0.4` |
 
 ### `GoeyToastAction`
 
@@ -153,6 +154,7 @@ Props for the `<GoeyToaster />` component.
 | `theme`      | `'light' \| 'dark'`                   | `'light'`        | Color theme                                   |
 | `toastOptions` | `Partial<ExternalToast>`            | --               | Default options passed to Sonner              |
 | `spring`     | `boolean`                             | `true`           | Enable spring/bounce animations globally      |
+| `bounce`     | `number`                              | `0.4`            | Spring intensity: `0.05` (subtle) to `0.8` (dramatic) |
 
 ### `GoeyPromiseData<T>`
 
@@ -171,6 +173,7 @@ Configuration for `goeyToast.promise()`.
 | `borderWidth` | `number`                                      | No       | Border width in px                             |
 | `timing`      | `GoeyToastTimings`                            | No       | Animation timing overrides                     |
 | `spring`      | `boolean`                                     | No       | Enable spring/bounce animations (default `true`) |
+| `bounce`      | `number`                                      | No       | Spring intensity: `0.05` (subtle) to `0.8` (dramatic), default `0.4` |
 
 **`description` sub-fields:**
 
@@ -293,6 +296,26 @@ goeyToast.success('Saved', {
 ```
 
 When `spring` is `false`, all spring-based animations (landing squish, blob squish, morph transitions, pill resize, header squish) use smooth ease-in-out curves instead. Error shake animations still work regardless of this setting.
+
+### Bounce Intensity
+
+Control how dramatic the spring effect feels with a single `bounce` value:
+
+```tsx
+// Subtle, barely-there spring
+goeyToast.success('Saved', { bounce: 0.1 })
+
+// Default feel
+goeyToast.success('Saved', { bounce: 0.4 })
+
+// Jelly mode
+goeyToast.success('Saved', { bounce: 0.8 })
+
+// Set globally via GoeyToaster
+<GoeyToaster bounce={0.6} />
+```
+
+The `bounce` value (0.05 to 0.8) controls spring stiffness, damping, and squish magnitude together so you get a consistent feel from one number.
 
 ## Exports
 
