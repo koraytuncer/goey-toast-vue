@@ -86,7 +86,7 @@ function useCopy() {
   return { copied, copy }
 }
 
-const DEMO_DEFAULTS: GoeyToastOptions = {
+const DEMO_DEFAULTS = {
   spring: false,
   timing: {
     expandDelay: 80,
@@ -94,7 +94,7 @@ const DEMO_DEFAULTS: GoeyToastOptions = {
     collapseDuration: 0.8,
     displayDuration: 3000,
   },
-}
+} satisfies GoeyToastOptions
 
 const TOAST_TYPES: ToastType[] = ['default', 'success', 'error', 'warning', 'info']
 const POSITIONS: GoeyToasterProps['position'][] = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
