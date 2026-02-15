@@ -87,7 +87,7 @@ function useCopy() {
 }
 
 const DEMO_DEFAULTS = {
-  spring: false,
+  spring: true,
   timing: {
     expandDelay: 80,
     expandDuration: 0.6,
@@ -410,9 +410,9 @@ function App() {
             <div className="section">
               <div className="section-label">No Spring (Smooth Easing)</div>
               <div className="buttons">
-                <button onClick={() => goeyToast.success('Changes Saved', DEMO_DEFAULTS)}>Success (no spring)</button>
-                <button onClick={() => goeyToast.error('Connection lost', { ...DEMO_DEFAULTS, description: 'Unable to reach the server. Check your internet connection and try again.' })}>Error + Desc (no spring)</button>
-                <button onClick={() => goeyToast.info('Share link ready', { ...DEMO_DEFAULTS, description: 'Your share link has been generated and is ready to copy.', action: { label: 'Copy to Clipboard', onClick: () => navigator.clipboard.writeText('https://example.com/share/abc123'), successLabel: 'Copied!' } })}>Action (no spring)</button>
+                <button onClick={() => goeyToast.success('Changes Saved', { ...DEMO_DEFAULTS, spring: false })}>Success (no spring)</button>
+                <button onClick={() => goeyToast.error('Connection lost', { ...DEMO_DEFAULTS, spring: false, description: 'Unable to reach the server. Check your internet connection and try again.' })}>Error + Desc (no spring)</button>
+                <button onClick={() => goeyToast.info('Share link ready', { ...DEMO_DEFAULTS, spring: false, description: 'Your share link has been generated and is ready to copy.', action: { label: 'Copy to Clipboard', onClick: () => navigator.clipboard.writeText('https://example.com/share/abc123'), successLabel: 'Copied!' } })}>Action (no spring)</button>
               </div>
             </div>
 
