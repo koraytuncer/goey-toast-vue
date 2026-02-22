@@ -1,6 +1,6 @@
 {
   "name": "goey-toast-vue3",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A gooey, morphing toast component for Vue 3 built on vue-sonner with Motion animations",
   "type": "module",
   "main": "./dist/index.cjs",
