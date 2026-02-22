@@ -1,16 +1,20 @@
-# goey-toast
+# goey-toast-vue
 
-[![goey-toast](https://goey-toast.vercel.app/og-image.png)](https://goey-toast.vercel.app)
+Morphing toast notifications for Vue 3. Organic blob animations, promise tracking, and full customization out of the box.
 
-**[Live Demo & Docs](https://goey-toast.vercel.app)**
+**[Live Demo & Docs](https://goey-toast-vue.netlify.app)**
+
+> Vue 3 port of [goey-toast](https://github.com/anl331/goey-toast) by [@anl331](https://github.com/anl331). Built on [vue-sonner](https://github.com/xiaoluoboding/vue-sonner) and [Motion](https://motion.dev).
+
+---
 
 ## Features
 
-- Organic blob morph animation (pill &rarr; blob &rarr; pill)
+- Organic blob morph animation (pill → blob → pill)
 - Five toast types: default, success, error, warning, info
-- Promise toasts with loading &rarr; success/error transitions
+- Promise toasts with loading → success/error transitions
 - Action buttons with optional success label morph-back
-- Description body supporting strings and React components
+- Description body supporting strings and Vue components
 - Configurable display duration and bounce intensity
 - Custom fill color, border color, and border width
 - CSS class overrides via `classNames` prop
@@ -20,61 +24,51 @@
 - Hover re-expand: hovering a collapsed pill re-expands the toast
 - Pre-dismiss collapse animation
 
+---
+
 ## Installation
 
 ```bash
-npm install goey-toast
+npm install goey-toast-vue
 ```
-
-### shadcn/ui
-
-```bash
-npx shadcn@latest add https://goey-toast.vercel.app/r/goey-toaster.json
-```
-
-This installs a thin wrapper component at `components/ui/goey-toaster.tsx` and auto-installs the `goey-toast` and `framer-motion` packages.
 
 ### Peer Dependencies
 
-goey-toast requires the following peer dependencies:
-
 ```bash
-npm install react react-dom framer-motion
+npm install vue motion
 ```
 
-| Package        | Version    |
-| -------------- | ---------- |
-| react          | >= 18.0.0  |
-| react-dom      | >= 18.0.0  |
-| framer-motion  | >= 10.0.0  |
+| Package  | Version   |
+| -------- | --------- |
+| vue      | >= 3.3.0  |
+| motion   | >= 11.0.0 |
 
 ### CSS Import (Required)
 
-You **must** import the goey-toast stylesheet for the component to render correctly:
-
-```tsx
-import 'goey-toast/styles.css'
+```ts
+import 'goey-toast-vue/styles.css'
 ```
 
-Add this import once in your app's entry point (e.g., `main.tsx` or `App.tsx`). Without it, toasts will appear unstyled.
+Add this once in your app's entry point (e.g. `main.ts`). Without it, toasts will appear unstyled.
+
+---
 
 ## Quick Start
 
-```tsx
-import { GoeyToaster, goeyToast } from 'goey-toast'
-import 'goey-toast/styles.css'
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { GoeyToaster, goeyToast } from 'goey-toast-vue'
+import 'goey-toast-vue/styles.css'
+</script>
 
-function App() {
-  return (
-    <>
-      <GoeyToaster position="bottom-right" />
-      <button onClick={() => goeyToast.success('Saved!')}>
-        Save
-      </button>
-    </>
-  )
-}
+<template>
+  <GoeyToaster position="bottom-right" />
+  <button @click="goeyToast.success('Saved!')">Save</button>
+</template>
 ```
+
+---
 
 ## API Reference
 
@@ -90,44 +84,48 @@ goeyToast.promise(promise, data)        // loading -> success/error
 goeyToast.dismiss(toastId?)             // dismiss one or all toasts
 ```
 
+---
+
 ### `GoeyToastOptions`
 
 Options passed as the second argument to `goeyToast()` and type-specific methods.
 
-| Option        | Type                 | Description                        |
-| ------------- | -------------------- | ---------------------------------- |
-| `description` | `ReactNode`          | Body content (string or component) |
-| `action`      | `GoeyToastAction`    | Action button configuration        |
-| `icon`        | `ReactNode`          | Custom icon override               |
-| `duration`    | `number`             | Display duration in ms             |
-| `id`          | `string \| number`   | Unique toast identifier            |
-| `classNames`  | `GoeyToastClassNames`| CSS class overrides                |
-| `fillColor`   | `string`             | Background color of the blob       |
-| `borderColor` | `string`             | Border color of the blob           |
-| `borderWidth` | `number`             | Border width in px (default 1.5)   |
-| `timing`      | `GoeyToastTimings`   | Animation timing overrides         |
-| `spring`      | `boolean`            | Enable spring/bounce animations (default `true`) |
-| `bounce`      | `number`             | Spring intensity from `0.05` (subtle) to `0.8` (dramatic), default `0.4` |
+| Option        | Type                   | Description                              |
+| ------------- | ---------------------- | ---------------------------------------- |
+| `description` | `string \| Component`  | Body content (string or Vue component)   |
+| `action`      | `GoeyToastAction`      | Action button configuration              |
+| `icon`        | `string \| Component`  | Custom icon override                     |
+| `duration`    | `number`               | Display duration in ms                   |
+| `id`          | `string \| number`     | Unique toast identifier                  |
+| `classNames`  | `GoeyToastClassNames`  | CSS class overrides                      |
+| `fillColor`   | `string`               | Background color of the blob             |
+| `borderColor` | `string`               | Border color of the blob                 |
+| `borderWidth` | `number`               | Border width in px (default `1.5`)       |
+| `timing`      | `GoeyToastTimings`     | Animation timing overrides               |
+| `spring`      | `boolean`              | Enable spring/bounce animations (default `true`) |
+| `bounce`      | `number`               | Spring intensity `0.05` (subtle) → `0.8` (dramatic), default `0.4` |
+
+---
 
 ### `GoeyToastAction`
 
-| Property       | Type       | Required | Description                                  |
-| -------------- | ---------- | -------- | -------------------------------------------- |
-| `label`        | `string`   | Yes      | Button text                                  |
-| `onClick`      | `() => void` | Yes   | Click handler                                |
-| `successLabel` | `string`   | No       | Label shown after click (morphs back to pill)|
+| Property       | Type         | Required | Description                                   |
+| -------------- | ------------ | -------- | --------------------------------------------- |
+| `label`        | `string`     | Yes      | Button text                                   |
+| `onClick`      | `() => void` | Yes      | Click handler                                 |
+| `successLabel` | `string`     | No       | Label shown after click (morphs back to pill) |
+
+---
 
 ### `GoeyToastTimings`
 
-Fine-tune animation speeds per toast.
+| Property          | Type     | Default | Description                       |
+| ----------------- | -------- | ------- | --------------------------------- |
+| `displayDuration` | `number` | `4000`  | Milliseconds toast stays expanded |
 
-| Property           | Type     | Default | Description                          |
-| ------------------ | -------- | ------- | ------------------------------------ |
-| `displayDuration`  | `number` | 4000    | Milliseconds toast stays expanded    |
+---
 
 ### `GoeyToastClassNames`
-
-Override styles for any part of the toast.
 
 | Key             | Target           |
 | --------------- | ---------------- |
@@ -140,47 +138,50 @@ Override styles for any part of the toast.
 | `actionWrapper` | Button container |
 | `actionButton`  | Action button    |
 
+---
+
 ### `GoeyToasterProps`
 
 Props for the `<GoeyToaster />` component.
 
-| Prop         | Type                                  | Default          | Description                                   |
-| ------------ | ------------------------------------- | ---------------- | --------------------------------------------- |
-| `position`   | `'top-left' \| 'top-center' \| 'top-right' \| 'bottom-left' \| 'bottom-center' \| 'bottom-right'` | `'bottom-right'` | Toast position |
-| `duration`   | `number`                              | --               | Default display duration in ms                |
-| `gap`        | `number`                              | `14`             | Gap between stacked toasts (px)               |
-| `offset`     | `number \| string`                    | `'24px'`         | Distance from screen edge                     |
-| `theme`      | `'light' \| 'dark'`                   | `'light'`        | Color theme                                   |
-| `toastOptions` | `Partial<ExternalToast>`            | --               | Default options passed to Sonner              |
-| `spring`     | `boolean`                             | `true`           | Enable spring/bounce animations globally      |
-| `bounce`     | `number`                              | `0.4`            | Spring intensity: `0.05` (subtle) to `0.8` (dramatic) |
+| Prop           | Type                                                                                                      | Default          | Description                                        |
+| -------------- | --------------------------------------------------------------------------------------------------------- | ---------------- | -------------------------------------------------- |
+| `position`     | `'top-left' \| 'top-center' \| 'top-right' \| 'bottom-left' \| 'bottom-center' \| 'bottom-right'`       | `'bottom-right'` | Toast position                                     |
+| `duration`     | `number`                                                                                                  | —                | Default display duration in ms                     |
+| `gap`          | `number`                                                                                                  | `14`             | Gap between stacked toasts (px)                    |
+| `offset`       | `number \| string`                                                                                        | `'24px'`         | Distance from screen edge                          |
+| `theme`        | `'light' \| 'dark' \| 'system'`                                                                          | `'light'`        | Color theme                                        |
+| `spring`       | `boolean`                                                                                                 | `true`           | Enable spring/bounce animations globally           |
+| `bounce`       | `number`                                                                                                  | `0.4`            | Spring intensity: `0.05` (subtle) to `0.8` (dramatic) |
+
+---
 
 ### `GoeyPromiseData<T>`
 
 Configuration for `goeyToast.promise()`.
 
-| Property      | Type                                          | Required | Description                                    |
-| ------------- | --------------------------------------------- | -------- | ---------------------------------------------- |
-| `loading`     | `string`                                      | Yes      | Title shown during loading                     |
-| `success`     | `string \| ((data: T) => string)`             | Yes      | Title on success (static or derived from result)|
-| `error`       | `string \| ((error: unknown) => string)`      | Yes      | Title on error (static or derived from error)  |
-| `description` | `object`                                      | No       | Per-phase descriptions (see below)             |
-| `action`      | `object`                                      | No       | Per-phase action buttons (see below)           |
-| `classNames`  | `GoeyToastClassNames`                         | No       | CSS class overrides                            |
-| `fillColor`   | `string`                                      | No       | Background color of the blob                   |
-| `borderColor` | `string`                                      | No       | Border color of the blob                       |
-| `borderWidth` | `number`                                      | No       | Border width in px                             |
-| `timing`      | `GoeyToastTimings`                            | No       | Animation timing overrides                     |
-| `spring`      | `boolean`                                     | No       | Enable spring/bounce animations (default `true`) |
-| `bounce`      | `number`                                      | No       | Spring intensity: `0.05` (subtle) to `0.8` (dramatic), default `0.4` |
+| Property      | Type                                     | Required | Description                                      |
+| ------------- | ---------------------------------------- | -------- | ------------------------------------------------ |
+| `loading`     | `string`                                 | Yes      | Title shown during loading                       |
+| `success`     | `string \| ((data: T) => string)`        | Yes      | Title on success                                 |
+| `error`       | `string \| ((error: unknown) => string)` | Yes      | Title on error                                   |
+| `description` | `object`                                 | No       | Per-phase descriptions (see below)               |
+| `action`      | `object`                                 | No       | Per-phase action buttons (see below)             |
+| `classNames`  | `GoeyToastClassNames`                    | No       | CSS class overrides                              |
+| `fillColor`   | `string`                                 | No       | Background color of the blob                     |
+| `borderColor` | `string`                                 | No       | Border color of the blob                         |
+| `borderWidth` | `number`                                 | No       | Border width in px                               |
+| `timing`      | `GoeyToastTimings`                       | No       | Animation timing overrides                       |
+| `spring`      | `boolean`                                | No       | Enable spring/bounce animations (default `true`) |
+| `bounce`      | `number`                                 | No       | Spring intensity, default `0.4`                  |
 
 **`description` sub-fields:**
 
-| Key       | Type                                             |
-| --------- | ------------------------------------------------ |
-| `loading` | `ReactNode`                                      |
-| `success` | `ReactNode \| ((data: T) => ReactNode)`          |
-| `error`   | `ReactNode \| ((error: unknown) => ReactNode)`   |
+| Key       | Type                                              |
+| --------- | ------------------------------------------------- |
+| `loading` | `string \| Component`                             |
+| `success` | `string \| Component \| ((data: T) => string \| Component)` |
+| `error`   | `string \| Component \| ((error: unknown) => string \| Component)` |
 
 **`action` sub-fields:**
 
@@ -189,36 +190,41 @@ Configuration for `goeyToast.promise()`.
 | `success` | `GoeyToastAction` |
 | `error`   | `GoeyToastAction` |
 
+---
+
 ## Usage Examples
 
-### Description
+### Basic Types
 
-```tsx
+```ts
+goeyToast('Notification received')
+goeyToast.success('Changes saved')
+goeyToast.error('Something went wrong')
+goeyToast.warning('Storage is almost full')
+goeyToast.info('New update available')
+```
+
+### With Description
+
+```ts
 goeyToast.error('Payment failed', {
   description: 'Your card was declined. Please try again.',
 })
 ```
 
-### Custom React Component as Description
+### Vue Component as Description
 
-```tsx
+```ts
+import DeploymentInfo from './DeploymentInfo.vue'
+
 goeyToast.success('Deployment complete', {
-  description: (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div>
-        <span>Environment:</span> <strong>Production</strong>
-      </div>
-      <div>
-        <span>Branch:</span> <strong>main @ 3f8a2c1</strong>
-      </div>
-    </div>
-  ),
+  description: DeploymentInfo,
 })
 ```
 
 ### Action Button with Success Label
 
-```tsx
+```ts
 goeyToast.info('Share link ready', {
   description: 'Your link has been generated.',
   action: {
@@ -231,7 +237,7 @@ goeyToast.info('Share link ready', {
 
 ### Promise Toast
 
-```tsx
+```ts
 goeyToast.promise(saveData(), {
   loading: 'Saving...',
   success: 'Changes saved',
@@ -251,7 +257,7 @@ goeyToast.promise(saveData(), {
 
 ### Custom Styling
 
-```tsx
+```ts
 goeyToast.success('Styled!', {
   fillColor: '#1a1a2e',
   borderColor: '#333',
@@ -267,7 +273,7 @@ goeyToast.success('Styled!', {
 
 ### Display Duration
 
-```tsx
+```ts
 goeyToast.success('Saved', {
   description: 'Your changes have been synced.',
   timing: { displayDuration: 5000 },
@@ -276,69 +282,62 @@ goeyToast.success('Saved', {
 
 ### Disabling Spring Animations
 
-Disable bounce/spring animations for a cleaner, more subtle look:
-
-```tsx
-// Per-toast: disable spring for this toast only
+```ts
+// Per-toast
 goeyToast.success('Saved', {
   description: 'Your changes have been synced.',
   spring: false,
 })
-
-// Globally: disable spring for all toasts
-<GoeyToaster spring={false} />
 ```
 
-When `spring` is `false`, all spring-based animations (landing squish, blob squish, morph transitions, pill resize, header squish) use smooth ease-in-out curves instead. Error shake animations still work regardless of this setting.
+```vue
+<!-- Global -->
+<GoeyToaster :spring="false" />
+```
+
+When `spring` is `false`, all spring-based animations use smooth ease-in-out curves instead. Error shake animations still work regardless.
 
 ### Bounce Intensity
 
-Control how dramatic the spring effect feels with a single `bounce` value:
-
-```tsx
-// Subtle, barely-there spring
-goeyToast.success('Saved', { bounce: 0.1 })
-
-// Default feel
-goeyToast.success('Saved', { bounce: 0.4 })
-
-// Jelly mode
-goeyToast.success('Saved', { bounce: 0.8 })
-
-// Set globally via GoeyToaster
-<GoeyToaster bounce={0.6} />
+```ts
+goeyToast.success('Saved', { bounce: 0.1 })   // subtle
+goeyToast.success('Saved', { bounce: 0.4 })   // default
+goeyToast.success('Saved', { bounce: 0.8 })   // jelly mode
 ```
 
-The `bounce` value (0.05 to 0.8) controls spring stiffness, damping, and squish magnitude together so you get a consistent feel from one number.
+```vue
+<!-- Global -->
+<GoeyToaster :bounce="0.6" />
+```
+
+---
 
 ## Exports
 
 ```ts
-// Components
-export { GoeyToaster } from 'goey-toast'
-
-// Toast function
-export { goeyToast } from 'goey-toast'
-
-// Types
-export type {
+import { GoeyToaster, goeyToast } from 'goey-toast-vue'
+import type {
   GoeyToastOptions,
   GoeyPromiseData,
   GoeyToasterProps,
   GoeyToastAction,
   GoeyToastClassNames,
   GoeyToastTimings,
-} from 'goey-toast'
+  GoeyRenderable,
+} from 'goey-toast-vue'
 ```
+
+---
 
 ## Browser Support
 
-goey-toast works in all modern browsers that support:
+Works in all modern browsers that support:
 
-- CSS Modules
 - SVG path animations
 - ResizeObserver
-- `framer-motion` (Chrome, Firefox, Safari, Edge)
+- CSS custom properties
+
+---
 
 ## License
 
