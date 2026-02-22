@@ -1,5 +1,5 @@
 {
-  "name": "goey-toast-vue",
+  "name": "goey-toast-vue3",
   "version": "0.1.0",
   "description": "A gooey, morphing toast component for Vue 3 built on vue-sonner with Motion animations",
   "type": "module",
@@ -66,7 +66,7 @@
     "gooey"
   ],
   "license": "MIT",
-  "homepage": "https://goey-toast-vue.netlify.app",
+  "homepage": "https://goey-toast-vue3.netlify.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/koraytuncer/goey-toast-vue"

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "goey-toast-vue": "file:..",
+    "goey-toast-vue3": "file:..",
     "motion": "^11.18.2",
     "vue": "^3.5.13",
     "vue-sonner": "^1.3.0"

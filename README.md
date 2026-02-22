@@ -1,10 +1,10 @@
-# goey-toast-vue
+# goey-toast-vue3
 
-[![goey-toast-vue](https://goey-toast-vue.netlify.app/og-image.png)](https://goey-toast-vue.netlify.app)
+[![goey-toast-vue3](https://goey-toast-vue3.netlify.app/og-image.png)](https://goey-toast-vue3.netlify.app)
 
 Morphing toast notifications for Vue 3. Organic blob animations, promise tracking, and full customization out of the box.
 
-**[Live Demo & Docs](https://goey-toast-vue.netlify.app)**
+**[Live Demo & Docs](https://goey-toast-vue3.netlify.app)**
 
 > Vue 3 port of [goey-toast](https://github.com/anl331/goey-toast) by [@anl331](https://github.com/anl331). Built on [vue-sonner](https://github.com/xiaoluoboding/vue-sonner) and [Motion](https://motion.dev).
 
@@ -31,7 +31,7 @@ Morphing toast notifications for Vue 3. Organic blob animations, promise trackin
 ## Installation
 
 ```bash
-npm install goey-toast-vue
+npm install goey-toast-vue3
 ```
 
 ### Peer Dependencies
@@ -48,7 +48,7 @@ npm install vue motion
 ### CSS Import (Required)
 
 ```ts
-import 'goey-toast-vue/styles.css'
+import 'goey-toast-vue3/styles.css'
 ```
 
 Add this once in your app's entry point (e.g. `main.ts`). Without it, toasts will appear unstyled.
@@ -60,8 +60,8 @@ Add this once in your app's entry point (e.g. `main.ts`). Without it, toasts wil
 ```vue
 <!-- App.vue -->
 <script setup lang="ts">
-import { GoeyToaster, goeyToast } from 'goey-toast-vue'
-import 'goey-toast-vue/styles.css'
+import { GoeyToaster, goeyToast } from 'goey-toast-vue3'
+import 'goey-toast-vue3/styles.css'
 </script>
 
 <template>
@@ -317,7 +317,7 @@ goeyToast.success('Saved', { bounce: 0.8 })   // jelly mode
 ## Exports
 
 ```ts
-import { GoeyToaster, goeyToast } from 'goey-toast-vue'
+import { GoeyToaster, goeyToast } from 'goey-toast-vue3'
 import type {
   GoeyToastOptions,
   GoeyPromiseData,
@@ -326,7 +326,7 @@ import type {
   GoeyToastClassNames,
   GoeyToastTimings,
   GoeyRenderable,
-} from 'goey-toast-vue'
+} from 'goey-toast-vue3'
 ```
 
 ---

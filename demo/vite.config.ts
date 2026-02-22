@@ -13,8 +13,8 @@ export default defineConfig({
     alias: {
       ...(useLocalSource
         ? {
-            'goey-toast-vue/styles.css': localCss,
-            'goey-toast-vue': localSrc,
+            'goey-toast-vue3/styles.css': localCss,
+            'goey-toast-vue3': localSrc,
           }
         : {}),
     },
