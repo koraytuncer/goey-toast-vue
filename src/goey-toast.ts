@@ -1,38 +1,38 @@
-import { ref, defineComponent, h, watch } from 'vue'
-import { toast } from 'vue-sonner'
-import GoeyToast from './components/GoeyToast.vue'
-import ToastErrorBoundary from './components/ToastErrorBoundary.vue'
+import { ref, defineComponent, h, watch } from "vue";
+import { toast } from "vue-sonner";
+import GoeyToast from "./components/GoeyToast.vue";
+import ToastErrorBoundary from "./components/ToastErrorBoundary.vue";
 import type {
   GoeyToastOptions,
   GoeyPromiseData,
   GoeyToastPhase,
   GoeyToastType,
   GoeyRenderable,
-} from './types'
+} from "./types";
 
-const DEFAULT_EXPANDED_DURATION = 4000
+const DEFAULT_EXPANDED_DURATION = 4000;
 
 // ─── GoeyToastWrapper ─────────────────────────────────────────────────────────
 // Thin wrapper that renders GoeyToast inside ToastErrorBoundary
 
 function createToastWrapper(props: {
-  initialPhase: GoeyToastPhase
-  title: string
-  type: GoeyToastType
-  description?: GoeyRenderable
-  action?: GoeyToastOptions['action']
-  icon?: GoeyRenderable
-  classNames?: GoeyToastOptions['classNames']
-  fillColor?: string
-  borderColor?: string
-  borderWidth?: number
-  timing?: GoeyToastOptions['timing']
-  spring?: boolean
-  bounce?: number
-  toastId?: string | number
+  initialPhase: GoeyToastPhase;
+  title: string;
+  type: GoeyToastType;
+  description?: GoeyRenderable;
+  action?: GoeyToastOptions["action"];
+  icon?: GoeyRenderable;
+  classNames?: GoeyToastOptions["classNames"];
+  fillColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  timing?: GoeyToastOptions["timing"];
+  spring?: boolean;
+  bounce?: number;
+  toastId?: string | number;
 }) {
   return defineComponent({
-    name: 'GoeyToastWrapper',
+    name: "GoeyToastWrapper",
     setup() {
       return () =>
         h(ToastErrorBoundary, null, {
@@ -53,9 +53,9 @@ function createToastWrapper(props: {
               bounce: props.bounce,
               toastId: props.toastId,
             }),
-        })
+        });
     },
-  })
+  });
 }
 
 // ─── PromiseToastWrapper ──────────────────────────────────────────────────────
@@ -64,48 +64,70 @@ function createToastWrapper(props: {
 function createPromiseWrapper<T>(
   promise: Promise<T>,
   data: GoeyPromiseData<T>,
-  toastId: string | number
+  toastId: string | number,
 ) {
-  return defineComponent({
-    name: 'PromiseToastWrapper',
+  const component = defineComponent({
+    name: "PromiseToastWrapper",
     setup() {
-      const phase = ref<GoeyToastPhase>('loading')
-      const title = ref(data.loading)
-      const description = ref<GoeyRenderable | undefined>(data.description?.loading)
-      const action = ref<GoeyToastOptions['action'] | undefined>(undefined)
+      const phase = ref<GoeyToastPhase>("loading");
+      const title = ref(data.loading);
+      const description = ref<GoeyRenderable | undefined>(
+        data.description?.loading,
+      );
+      const action = ref<GoeyToastOptions["action"] | undefined>(undefined);
+      let handled = false;
 
       const resetDuration = (hasExpandedContent: boolean) => {
-        const baseDuration = data.timing?.displayDuration ?? (hasExpandedContent ? DEFAULT_EXPANDED_DURATION : undefined)
-        const collapseDurMs = 0.9 * 1000
-        const duration = baseDuration != null && hasExpandedContent ? baseDuration + collapseDurMs : baseDuration
+        const baseDuration =
+          data.timing?.displayDuration ??
+          (hasExpandedContent ? DEFAULT_EXPANDED_DURATION : undefined);
+        const collapseDurMs = 0.9 * 1000;
+        const duration =
+          baseDuration != null && hasExpandedContent
+            ? baseDuration + collapseDurMs
+            : baseDuration;
         if (duration != null) {
-          toast.custom(createPromiseWrapper(promise, data, toastId), { id: toastId, duration })
+          toast.custom(component, { id: toastId, duration });
         }
-      }
+      };
 
       promise
         .then((result) => {
-          const successDesc = data.description?.success
-          const desc: GoeyRenderable = (typeof successDesc === 'function' && !('setup' in successDesc) && !('render' in successDesc))
-            ? (successDesc as (data: T) => GoeyRenderable)(result)
-            : successDesc as GoeyRenderable
-          title.value = typeof data.success === 'function' ? data.success(result) : data.success
-          description.value = desc
-          action.value = data.action?.success
-          phase.value = 'success'
-          resetDuration(Boolean(desc || data.action?.success))
+          if (handled) return;
+          handled = true;
+          const successDesc = data.description?.success;
+          const desc: GoeyRenderable =
+            typeof successDesc === "function" &&
+            !("setup" in successDesc) &&
+            !("render" in successDesc)
+              ? (successDesc as (data: T) => GoeyRenderable)(result)
+              : (successDesc as GoeyRenderable);
+          title.value =
+            typeof data.success === "function"
+              ? data.success(result)
+              : data.success;
+          description.value = desc;
+          action.value = data.action?.success;
+          phase.value = "success";
+          resetDuration(Boolean(desc || data.action?.success));
         })
         .catch((err) => {
-          const errorDesc = data.description?.error
-          const desc: GoeyRenderable = (typeof errorDesc === 'function' && !('setup' in errorDesc) && !('render' in errorDesc))
-            ? (errorDesc as (error: unknown) => GoeyRenderable)(err)
-            : errorDesc as GoeyRenderable
-          title.value = typeof data.error === 'function' ? data.error(err) : data.error
-          description.value = desc
-          action.value = data.action?.error
-          phase.value = 'error'
-          resetDuration(Boolean(desc || data.action?.error))
-        })
+          if (handled) return;
+          handled = true;
+          const errorDesc = data.description?.error;
+          const desc: GoeyRenderable =
+            typeof errorDesc === "function" &&
+            !("setup" in errorDesc) &&
+            !("render" in errorDesc)
+              ? (errorDesc as (error: unknown) => GoeyRenderable)(err)
+              : (errorDesc as GoeyRenderable);
+          title.value =
+            typeof data.error === "function" ? data.error(err) : data.error;
+          description.value = desc;
+          action.value = data.action?.error;
+          phase.value = "error";
+          resetDuration(Boolean(desc || data.action?.error));
+        });
 
       return () =>
         h(ToastErrorBoundary, null, {
@@ -113,7 +135,10 @@ function createPromiseWrapper<T>(
             h(GoeyToast, {
               title: title.value,
               description: description.value,
-              type: phase.value === 'loading' ? 'info' : (phase.value as GoeyToastType),
+              type:
+                phase.value === "loading"
+                  ? "info"
+                  : (phase.value as GoeyToastType),
               action: action.value,
               phase: phase.value,
               classNames: data.classNames,
@@ -124,9 +149,10 @@ function createPromiseWrapper<T>(
               spring: data.spring,
               bounce: data.bounce,
             }),
-        })
+        });
     },
-  })
+  });
+  return component;
 }
 
 // ─── createGoeyToast ──────────────────────────────────────────────────────────
@@ -134,12 +160,15 @@ function createPromiseWrapper<T>(
 function createGoeyToast(
   title: string,
   type: GoeyToastType,
-  options?: GoeyToastOptions
+  options?: GoeyToastOptions,
 ) {
-  const hasExpandedContent = Boolean(options?.description || options?.action)
-  const baseDuration = options?.timing?.displayDuration ?? options?.duration ?? (options?.description ? DEFAULT_EXPANDED_DURATION : undefined)
-  const duration = hasExpandedContent ? Infinity : baseDuration
-  const toastId = options?.id ?? Math.random().toString(36).slice(2)
+  const hasExpandedContent = Boolean(options?.description || options?.action);
+  const baseDuration =
+    options?.timing?.displayDuration ??
+    options?.duration ??
+    (options?.description ? DEFAULT_EXPANDED_DURATION : undefined);
+  const duration = hasExpandedContent ? Infinity : baseDuration;
+  const toastId = options?.id ?? Math.random().toString(36).slice(2);
 
   const WrapperComponent = createToastWrapper({
     initialPhase: type,
@@ -156,33 +185,36 @@ function createGoeyToast(
     spring: options?.spring,
     bounce: options?.bounce,
     toastId: hasExpandedContent ? toastId : undefined,
-  })
+  });
 
-  return toast.custom(WrapperComponent, { duration, id: toastId })
+  return toast.custom(WrapperComponent, { duration, id: toastId });
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export const goeyToast = Object.assign(
   (title: string, options?: GoeyToastOptions) =>
-    createGoeyToast(title, 'default', options),
+    createGoeyToast(title, "default", options),
   {
     success: (title: string, options?: GoeyToastOptions) =>
-      createGoeyToast(title, 'success', options),
+      createGoeyToast(title, "success", options),
     error: (title: string, options?: GoeyToastOptions) =>
-      createGoeyToast(title, 'error', options),
+      createGoeyToast(title, "error", options),
     warning: (title: string, options?: GoeyToastOptions) =>
-      createGoeyToast(title, 'warning', options),
+      createGoeyToast(title, "warning", options),
     info: (title: string, options?: GoeyToastOptions) =>
-      createGoeyToast(title, 'info', options),
-    promise: <T,>(promise: Promise<T>, data: GoeyPromiseData<T>) => {
-      const id = Math.random().toString(36).slice(2)
-      const WrapperComponent = createPromiseWrapper(promise, data, id)
+      createGoeyToast(title, "info", options),
+    promise: <T>(promise: Promise<T>, data: GoeyPromiseData<T>) => {
+      const id = Math.random().toString(36).slice(2);
+      const WrapperComponent = createPromiseWrapper(promise, data, id);
       return toast.custom(WrapperComponent, {
         id,
-        duration: (data.timing?.displayDuration != null || data.description) ? Infinity : undefined,
-      })
+        duration:
+          data.timing?.displayDuration != null || data.description
+            ? Infinity
+            : undefined,
+      });
     },
     dismiss: toast.dismiss,
-  }
-)
+  },
+);
